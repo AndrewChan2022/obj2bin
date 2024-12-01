@@ -48,7 +48,7 @@ target_link_libraries(obj2bin PRIVATE
 
 
 ########################
-# exe 
+# install
 
 
 # force not Program Files(x86)
@@ -69,10 +69,12 @@ install(TARGETS obj2bin
 # install(FILES ${CMAKE_BINARY_DIR}/$<CONFIG>/obj2bin.exe DESTINATION "C:/Program Files/obj2bin/bin")
 
 ########################
-# add to $env:PATH
+# post install
 
+# add path to $env:PATH
 # install(SCRIPT ${CMAKE_CURRENT_LIST_DIR}/post_install.cmake)
 
+# info add path to $env:PATH
 if (MSVC)
     install(CODE "
         message(STATUS \"********** after install, please add PATH ${CMAKE_INSTALL_PREFIX}/bin **********\")
