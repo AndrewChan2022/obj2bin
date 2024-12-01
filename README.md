@@ -10,9 +10,7 @@ cmake ..
 make -j12
 sudo make install
 
-vi ~/.bashrc
-# add line
-export PATH="$PATH:/usr/local/obj2bin/bin"
+# will install to /usr/local/bin"
 
 ```
 
