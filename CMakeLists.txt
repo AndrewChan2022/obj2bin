@@ -72,7 +72,9 @@ install(TARGETS obj2bin
 # post install
 
 # add path to $env:PATH
-# install(SCRIPT ${CMAKE_CURRENT_LIST_DIR}/post_install.cmake)
+# if (MSVC)
+#     install(SCRIPT ${CMAKE_CURRENT_LIST_DIR}/post_install.cmake)
+# endif()
 
 # info add path to $env:PATH
 if (MSVC)
@@ -80,7 +82,7 @@ if (MSVC)
         message(STATUS \"********** after install, please add PATH ${CMAKE_INSTALL_PREFIX}/bin **********\")
     ")
 else()
-    install(CODE "
-        message(STATUS \"********** after install, please append to ~/.bashrc: export PATH=\\\"\$PATH:${CMAKE_INSTALL_PREFIX}/bin\\\" **********\")
-    ")
+    # install(CODE "
+    #     message(STATUS \"********** after install, please append to ~/.bashrc: export PATH=\\\"\$PATH:${CMAKE_INSTALL_PREFIX}/bin\\\" **********\")
+    # ")
 endif()
