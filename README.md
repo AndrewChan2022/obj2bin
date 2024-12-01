@@ -10,7 +10,9 @@ cmake ..
 make -j12
 sudo make install
 
-# add bin to path
+vi ~/.bashrc
+# add line
+export PATH="$PATH:/usr/local/obj2bin/bin"
 
 ```
 
@@ -19,9 +21,10 @@ windows:
 mkdir build && cd build
 cmake ..
 
-# build install with msvc
+# build install with msvc adminstrator mode
 
-# add bin to path
+# add C:/Program Files/obj2bin/bin to path
+
 ```
 
 ## usage
