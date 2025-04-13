@@ -183,9 +183,15 @@ static void saveToBin(const std::string& filename, const Mesh& mesh) {
     }
 
     // Write vertex count and index count
+    uint32_t majorVersion = 2;
+    uint32_t minorVersion = 0;
     uint32_t vertexCount = static_cast<uint32_t>(mesh.vertices.size() / 3);
+    uint32_t normalCount = static_cast<uint32_t>(mesh.normals.size() / 3);
     uint32_t indexCount = static_cast<uint32_t>(mesh.indices.size());
+    outFile.write(reinterpret_cast<const char*>(&majorVersion), sizeof(majorVersion));
+    outFile.write(reinterpret_cast<const char*>(&minorVersion), sizeof(minorVersion));
     outFile.write(reinterpret_cast<const char*>(&vertexCount), sizeof(vertexCount));
+    outFile.write(reinterpret_cast<const char*>(&normalCount), sizeof(normalCount));
     outFile.write(reinterpret_cast<const char*>(&indexCount), sizeof(indexCount));
 
     // Write vertex data
@@ -207,40 +213,33 @@ static Mesh loadBin(const std::string& filename) {
     Mesh mesh;
 
     // Open file in binary mode
-    std::ifstream inFile(filename, std::ios::binary | std::ios::ate);
+    std::ifstream inFile(filename, std::ios::binary);
     if (!inFile.is_open()) {
         throw std::runtime_error("Failed to open file for reading: " + filename);
     }
 
-    // Get file size
-    std::streamsize fileSize = inFile.tellg();
-    inFile.seekg(0, std::ios::beg); // Move back to start
-
-    // Read vertex count and index count
+    // Read counts
+    uint32_t majorVersion = 0;
+    uint32_t minorVersion = 0;
     uint32_t vertexCount = 0;
+    uint32_t normalCount = 0;
     uint32_t indexCount = 0;
+    inFile.read(reinterpret_cast<char*>(&majorVersion), sizeof(majorVersion));
+    inFile.read(reinterpret_cast<char*>(&minorVersion), sizeof(minorVersion));
     inFile.read(reinterpret_cast<char*>(&vertexCount), sizeof(vertexCount));
+    inFile.read(reinterpret_cast<char*>(&normalCount), sizeof(normalCount));
     inFile.read(reinterpret_cast<char*>(&indexCount), sizeof(indexCount));
 
-    // Calculate size needed for vertices and indices
-    std::streamsize sizeForVertices = vertexCount * 3 * sizeof(float);
-    std::streamsize sizeForIndices = indexCount * sizeof(uint32_t);
-    std::streamsize sizeForNormals = vertexCount * 3 * sizeof(float);
-    std::streamsize minSize = sizeof(uint32_t) + sizeof(uint32_t) + sizeForVertices + sizeForIndices;
-
-    // Resize vectors
-    mesh.vertices.resize(vertexCount * 3); // 3 floats per vertex
-    mesh.normals.resize(0);                // 3 floats per normal
-    mesh.indices.resize(indexCount);       // 1 uint32_t per index
+    // Resize vectors based on counts
+    mesh.vertices.resize(vertexCount * 3);
+    mesh.normals.resize(normalCount * 3);
+    mesh.indices.resize(indexCount);
 
     // Read vertex data
     inFile.read(reinterpret_cast<char*>(mesh.vertices.data()), mesh.vertices.size() * sizeof(float));
 
     // Read normal data
-    if (fileSize >= minSize + sizeForNormals) {
-        mesh.normals.resize(vertexCount * 3);   // 3 floats per normal
-        inFile.read(reinterpret_cast<char*>(mesh.normals.data()), mesh.normals.size() * sizeof(float));
-    }
+    inFile.read(reinterpret_cast<char*>(mesh.normals.data()), mesh.normals.size() * sizeof(float));
 
     // Read index data
     inFile.read(reinterpret_cast<char*>(mesh.indices.data()), mesh.indices.size() * sizeof(uint32_t));
@@ -306,7 +305,9 @@ int main(int argc, const char *argv[]) {
         std::cout << "Output file: " << result["output"].as<std::string>() << std::endl;
     }
 
+    // std::cout << "begin load file: " << files[0] << std::endl;
     auto mesh = loadObj(files[0]);
+    // std::cout << "load file done \n";
     auto outfile = result["output"].as<std::string>();
     if (outfile == "") {
         auto filePath =  std::filesystem::path(files[0]);
@@ -342,7 +343,5 @@ int main(int argc, const char *argv[]) {
         saveToObj(testfile, mesh);
     }
 
-    std::cout << "hello world!\n";
     return 0;
 }
-
