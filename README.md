@@ -1,5 +1,20 @@
 # obj2bin
-.obj file to bin file {vert_count, tri_count, vertices, normals, indices}
+
+version 2.0
+
+.obj file to bin file 
+
+```cpp
+    uint32_t major_version;
+    uint32_t minor_version;
+    uint32_t vert_count;
+    uint32_t normal_count;
+    uint32_t tri_count;
+    
+    float vertices[];
+    float normals[];
+    float indices[];
+```
 
 ## build
 
