@@ -39,10 +39,20 @@ static Mesh loadObj(const std::string& file) {
 
     mesh.vertices = std::move(attrib.vertices);
     mesh.normals = std::move(attrib.normals);
-    auto& shape = shapes[0];
-    mesh.indices.resize(shape.mesh.indices.size());
-    for (size_t i = 0; i < mesh.indices.size(); i++) {
-        mesh.indices[i] = shape.mesh.indices[i].vertex_index;
+
+    // Calculate total number of indices across all shapes
+    size_t totalIndices = 0;
+    for (const auto& shape : shapes) {
+        totalIndices += shape.mesh.indices.size();
+    }
+    mesh.indices.resize(totalIndices);
+    
+    // Assign indices from all shapes
+    size_t currentIndex = 0;
+    for (const auto& shape : shapes) {
+        for (const auto& index : shape.mesh.indices) {
+            mesh.indices[currentIndex++] = index.vertex_index;
+        }
     }
 
     return mesh;
@@ -78,14 +88,22 @@ static void saveToObj(const std::string& filename, Mesh& mesh) {
 
     // Writing indices (triangles)
     const size_t triangles = indices.size() / 3;
+    size_t nnormal = normals.size();
     for (size_t i = 0; i < triangles; ++i) {
         std::string i0 = fmt::format("{:d}", indices[i * 3 + 0] + 1);
         std::string i1 = fmt::format("{:d}", indices[i * 3 + 1] + 1);
         std::string i2 = fmt::format("{:d}", indices[i * 3 + 2] + 1);
-        outFile << "f "
-                << i0 << "//" << i0 << " "
-                << i1 << "//" << i1 << " "
-                << i2 << "//" << i2 << "\n";
+        if (nnormal != 0) {
+            outFile << "f "
+                    << i0 << "//" << i0 << " "
+                    << i1 << "//" << i1 << " "
+                    << i2 << "//" << i2 << "\n";
+        } else {
+            outFile << "f "
+                    << i0  << " "
+                    << i1  << " "
+                    << i2  << "\n";
+        }
     }
 
     outFile.close();
@@ -182,17 +200,21 @@ static void saveToBin(const std::string& filename, const Mesh& mesh) {
     outFile.close();
 
     std::cout << "Successfully saved to " << filename << std::endl;
+    std::cout << "vertices count: " << vertexCount << " normals count: " << mesh.normals.size() / 3 << " indices count: " << indexCount << std::endl;
 }
-
 
 static Mesh loadBin(const std::string& filename) {
     Mesh mesh;
 
     // Open file in binary mode
-    std::ifstream inFile(filename, std::ios::binary);
+    std::ifstream inFile(filename, std::ios::binary | std::ios::ate);
     if (!inFile.is_open()) {
         throw std::runtime_error("Failed to open file for reading: " + filename);
     }
+
+    // Get file size
+    std::streamsize fileSize = inFile.tellg();
+    inFile.seekg(0, std::ios::beg); // Move back to start
 
     // Read vertex count and index count
     uint32_t vertexCount = 0;
@@ -200,16 +222,25 @@ static Mesh loadBin(const std::string& filename) {
     inFile.read(reinterpret_cast<char*>(&vertexCount), sizeof(vertexCount));
     inFile.read(reinterpret_cast<char*>(&indexCount), sizeof(indexCount));
 
+    // Calculate size needed for vertices and indices
+    std::streamsize sizeForVertices = vertexCount * 3 * sizeof(float);
+    std::streamsize sizeForIndices = indexCount * sizeof(uint32_t);
+    std::streamsize sizeForNormals = vertexCount * 3 * sizeof(float);
+    std::streamsize minSize = sizeof(uint32_t) + sizeof(uint32_t) + sizeForVertices + sizeForIndices;
+
     // Resize vectors
     mesh.vertices.resize(vertexCount * 3); // 3 floats per vertex
-    mesh.normals.resize(vertexCount * 3);  // 3 floats per normal
+    mesh.normals.resize(0);                // 3 floats per normal
     mesh.indices.resize(indexCount);       // 1 uint32_t per index
 
     // Read vertex data
     inFile.read(reinterpret_cast<char*>(mesh.vertices.data()), mesh.vertices.size() * sizeof(float));
 
     // Read normal data
-    inFile.read(reinterpret_cast<char*>(mesh.normals.data()), mesh.normals.size() * sizeof(float));
+    if (fileSize >= minSize + sizeForNormals) {
+        mesh.normals.resize(vertexCount * 3);   // 3 floats per normal
+        inFile.read(reinterpret_cast<char*>(mesh.normals.data()), mesh.normals.size() * sizeof(float));
+    }
 
     // Read index data
     inFile.read(reinterpret_cast<char*>(mesh.indices.data()), mesh.indices.size() * sizeof(uint32_t));
@@ -226,6 +257,7 @@ int main(int argc, const char *argv[]) {
     cxxopts::Options options("obj2bin", "A tool to convert OBJ files to binary format");
     options.add_options("")
         ("o,output", "output", cxxopts::value<std::string>()->default_value("")) // string
+        ("t,test", "Enable test mode", cxxopts::value<bool>()) // boolean, implicitly false
         ("h,help", "Print usage");
 
     // Define positional parameters
@@ -288,6 +320,27 @@ int main(int argc, const char *argv[]) {
         outfile = fullpath.string();
     }
     saveToBin(outfile, mesh);
+
+
+    if (result.count("test")) {
+        std::cout << "test\n";
+
+        std::string testfile;
+        {
+            auto filePath =  std::filesystem::path(files[0]);
+            std::filesystem::path dir = filePath.parent_path();
+            std::filesystem::path fileName = filePath.stem();           // fileName() with .obj stemp no .obj
+            std::filesystem::path fileExtension = filePath.extension(); // .obj
+            std::filesystem::path fullpath = (dir / fileName);
+            // std::cout << "fileName:" << fileName << "\n";
+            // std::cout << "fileExtension:" << fileExtension << "\n";
+            fullpath += "_test.obj";
+            testfile = fullpath.string();
+        }
+
+        Mesh mesh =  loadBin(outfile);
+        saveToObj(testfile, mesh);
+    }
 
     std::cout << "hello world!\n";
     return 0;

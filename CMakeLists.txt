@@ -54,13 +54,14 @@ target_link_libraries(obj2bin PRIVATE
 # force not Program Files(x86)
 if (MSVC)
     # if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX "C:/Program Files/${PROJECT_NAME}" CACHE PATH "Default installation directory" FORCE)
+    # set(CMAKE_INSTALL_PREFIX "C:/Program Files/${PROJECT_NAME}" CACHE PATH "Default installation directory" FORCE)
+    set(CMAKE_INSTALL_PREFIX "C:/Program Files/mytools" CACHE PATH "Default installation directory" FORCE)
     message(STATUS "Default install prefix set to ${CMAKE_INSTALL_PREFIX}")
 endif()
 
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 
-# Install the executable to C:/Program Files/obj2bin/bin/obj2bin.exe
+# Install the executable to C:/Program Files/mytools/bin/obj2bin.exe
 install(TARGETS obj2bin
     DESTINATION bin
 )
