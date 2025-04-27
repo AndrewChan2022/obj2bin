@@ -5,6 +5,17 @@ project(obj2bin)
 
 set(CMAKE_CXX_STANDARD 17)
 
+set(OBJ2BIN_VERSION_MAJOR 2)
+set(OBJ2BIN_VERSION_MINOR 1)
+set(OBJ2BIN_VERSION_PATCH 0)
+set(OBJ2BIN_VERSION_STRING "${OBJ2BIN_VERSION_MAJOR}.${OBJ2BIN_VERSION_MINOR}.${OBJ2BIN_VERSION_PATCH}")
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/version.hpp
+)
+
+
 if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
@@ -36,6 +47,7 @@ add_executable(obj2bin
 # inlcude
 target_include_directories(obj2bin PRIVATE
     ${SRC}
+    ${CMAKE_BINARY_DIR}
 )
 
 # lib

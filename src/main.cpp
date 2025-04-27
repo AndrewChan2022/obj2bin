@@ -5,6 +5,7 @@
 // #include <cli11>
 #include "RTMesh.h"
 #include <filesystem>
+#include <version.hpp>
 
 
 int main(int argc, const char *argv[]) {
@@ -15,7 +16,8 @@ int main(int argc, const char *argv[]) {
     options.add_options("")
         ("o,output", "output", cxxopts::value<std::string>()->default_value("")) // string
         ("t,test", "Enable test mode", cxxopts::value<bool>()) // boolean, implicitly false
-        ("h,help", "Print usage");
+        ("h,help", "Print usage")
+        ("v,version", "Print version");
 
     // Define positional parameters
     options.add_options()
@@ -40,8 +42,15 @@ int main(int argc, const char *argv[]) {
         return 1;
     }
 
+    // version
+    if (result.count("version")) {
+        std::cout << "obj2bin version " << OBJ2BIN_VERSION_STRING << std::endl;
+        return 0;
+    }
+
     // check para
     if (result.count("help")) {
+        std::cout << "obj2bin version " << OBJ2BIN_VERSION_STRING << std::endl;
         std::cout << options.help() << std::endl;
         return 0;
     }
